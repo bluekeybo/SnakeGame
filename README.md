@@ -1,2 +1,2 @@
-# Snake_Game
+# SnakeGame
 Game of Snake written in Python.
