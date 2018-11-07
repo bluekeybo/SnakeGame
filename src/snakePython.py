@@ -1,45 +1,50 @@
-import pygame
+import pygame as pg
 from random import randint
 
-def gameUpdate(game_disp, score, font, pt_dim, food_pos):
-    white = (255, 255, 255)
-    red = (255, 0, 0)
+def gameUpdate():
     textsurface = font.render('Score: ' + str(score), True, white)
-    pygame.draw.rect(game_disp, red, [food_pos[1], food_pos[0], pt_dim, pt_dim])
+    pg.draw.rect(game_disp, red, [food_pos[1], food_pos[0], pt_dim, pt_dim])
     game_disp.blit(textsurface, (0,0))
     screen.blit(game_disp, (0,0))
-    pygame.display.update()
+    pg.display.update()
 
-def snakeGen(game_disp, pt_dim, snake_dir, snake_pos, w_max, h_max):
-    white = (255, 255, 255)
-    
+def snakeGen():
+    collision = 0    
     for i, pos in enumerate(snake_pos):
         if(snake_dir[i] == 1):
-            if(pos[1] >= w_max - pt_dim):
+            if(pos[1] >= canv_w - pt_dim):
                 pos[1] = 0
             else:
                 pos[1] = pos[1] + pt_dim
         elif(snake_dir[i] == -1):
             if(pos[1] < pt_dim):
-                pos[1] = w_max - pt_dim
+                pos[1] = canv_w - pt_dim
             else:
                 pos[1] = pos[1] - pt_dim
         elif(snake_dir[i] == 2):
             if(pos[0] < pt_dim):
-                pos[0] = h_max - pt_dim
+                pos[0] = canv_h - pt_dim
             else:
                 pos[0] = pos[0] - pt_dim
         elif(snake_dir[i] == -2):
-            if(pos[0] >= h_max - pt_dim):
+            if(pos[0] >= canv_h - pt_dim):
                 pos[0] = 0
             else:
                 pos[0] = pos[0] + pt_dim
             
-        snakePrint(game_disp, white, [pos[0], pos[1]], pt_dim)
+        snakePrint([pos[0], pos[1]])
+        
+    for i in range(len(snake_pos) - 1):
+        for j in range(i + 1, len(snake_pos)):
+            if(snake_pos[i] == snake_pos[j]):
+                collision = 1
+                return collision
+    return collision         
+        
 
-def foodGen(game_disp, snake_pos, pt_dim, w_max, h_max):
-    pos_w = int(randint(0, w_max - 2 * pt_dim)/pt_dim) * pt_dim
-    pos_h = int(randint(0, h_max - 2 * pt_dim)/pt_dim) * pt_dim
+def foodGen():
+    pos_w = int(randint(0, canv_w - 2 * pt_dim)/pt_dim) * pt_dim
+    pos_h = int(randint(0, canv_h - 2 * pt_dim)/pt_dim) * pt_dim
     
     food_on_snake = 1
     
@@ -48,18 +53,18 @@ def foodGen(game_disp, snake_pos, pt_dim, w_max, h_max):
         for i in range(len(snake_pos)):
             if([pos_h, pos_w] == snake_pos[i]):
                 food_on_snake = 1
-                pos_w = int(randint(0, w_max - 2 * pt_dim)/pt_dim) * pt_dim
-                pos_h = int(randint(0, h_max - 2 * pt_dim)/pt_dim) * pt_dim
+                pos_w = int(randint(0, canv_w - 2 * pt_dim)/pt_dim) * pt_dim
+                pos_h = int(randint(0, canv_h - 2 * pt_dim)/pt_dim) * pt_dim
                 break
             else:
                 food_on_snake = 0
     return [pos_h, pos_w]
 
-def snakePrint(game_disp, white, pos, pt_dim):
-    for i in snake_pos:
-        pygame.draw.rect(game_disp, white, [pos[1], pos[0], pt_dim, pt_dim])  
+def snakePrint(pos):
+    pg.draw.rect(game_disp, white, [pos[1], pos[0], pt_dim, pt_dim])  
     
-time_wait_ms = 100
+#############################################################################
+time_wait_ms = 120
 canv_w = 1280
 canv_h = 720
 step = 10
@@ -70,16 +75,24 @@ snake_len = 3
 grow_tail_dir = 0
 grow_tail_pos = [0, 0]
 tail_prev = [0, 0]
-pt_dim = 20
+pt_dim = 40
 white = (255, 255, 255)
 black = (0, 0, 0)
+red = (255, 0, 0)
+collision = 0
+game_over = 0
+win = 0
+#############################################################################
 
-pygame.init()
-screen = pygame.display.set_mode((canv_w, canv_h))
-game_disp = pygame.Surface((canv_w, canv_h))
+pg.init()
+screen = pg.display.set_mode((canv_w, canv_h))
+game_disp = pg.Surface((canv_w, canv_h))
 game_disp.fill(black)
-font = pygame.font.SysFont('Times New Roman', 14, True)
-pygame.display.set_caption('Snake Python')
+font = pg.font.SysFont('Times New Roman', 20, True)
+game_over_text = pg.font.SysFont('Times New Roman', 38, True)
+winning_text = pg.font.SysFont('Times New Roman', 38, True)
+instructions_text = pg.font.SysFont('Times New Roman', 38, True)
+pg.display.set_caption('Snake Python')
 
 # snake direction list: 
 # 1: moving right horizontally
@@ -96,30 +109,31 @@ snake_pos.append([canv_h/2, canv_w/2])
 snake_pos.append([canv_h/2, canv_w/2 - pt_dim])
 snake_pos.append([canv_h/2, canv_w/2 - 2 * pt_dim])
 
-food_pos = foodGen(game_disp, snake_pos, pt_dim, canv_w, canv_h)
-
+food_pos = foodGen()
+        
 run = True
 
 while run:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for event in pg.event.get():
+        if (event.type == pg.QUIT):
             run = False
+            game_over = 1
             break
         
-    pressed = pygame.key.get_pressed()
-    if pressed[pygame.K_LEFT]:
+    pressed = pg.key.get_pressed()
+    if pressed[pg.K_LEFT]:
         if(snake_dir[0] != 1):
             direction = -1
         
-    if pressed[pygame.K_RIGHT]:
+    if pressed[pg.K_RIGHT]:
         if(snake_dir[0] != -1):
             direction = 1
         
-    if pressed[pygame.K_UP]:
+    if pressed[pg.K_UP]:
         if(snake_dir[0] != -2):
             direction = 2
         
-    if pressed[pygame.K_DOWN]:
+    if pressed[pg.K_DOWN]:
         if(snake_dir[0] != 2):
             direction = -2
     
@@ -128,17 +142,40 @@ while run:
     
     game_disp.fill(black)
     tail_prev = snake_pos[-1].copy()
-    snakeGen(game_disp, pt_dim, snake_dir, snake_pos, canv_w, canv_h)
+    collision = snakeGen()
         
     if(snake_pos[0] == food_pos):
         score += 1
         grow = 1
         snake_dir.append(0)
         snake_pos.append(tail_prev)
-        snakePrint(game_disp, white, snake_pos[-1], pt_dim)
-        food_pos = foodGen(game_disp, snake_pos, pt_dim, canv_w, canv_h)
-    gameUpdate(game_disp, score, font, pt_dim, food_pos)
-    pygame.time.wait(time_wait_ms)
+        snakePrint(snake_pos[-1])
+        food_pos = foodGen()
+    
+    if(collision):
+        run = False
+    
+    if(len(snake_pos) >= (canv_w/pt_dim) * (canv_h/pt_dim) - 10):
+        win = 1
+        run = False
+        
+    gameUpdate()
+    pg.time.wait(time_wait_ms)
 
-pygame.quit()
+if(win):
+    text = winning_text.render('Congratulations, You Won!', True, white)
+else:
+    text = game_over_text.render('Game Over!', True, white)
+
+text_rect = text.get_rect(center=(canv_w/2, canv_h/2))
+screen.blit(text, text_rect)
+pg.display.update()
+
+while not game_over:
+    for event in pg.event.get():
+        if (event.type == pg.QUIT):
+            game_over = 1
+            break
+
+pg.quit()
 quit()
