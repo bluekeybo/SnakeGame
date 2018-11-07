@@ -2,6 +2,9 @@ import pygame as pg
 from random import randint
 
 def gameUpdate():
+    """
+    Update the screen to show the game score, highscore, food and snake position.
+    """
     score_txt = font.render('Score: ' + str(score), True, white)
     hscore_txt = font.render('High Score: ' + str(high_score), True, white)
     pg.draw.rect(game_disp, red, [food_pos[1], food_pos[0], pt_dim, pt_dim])
@@ -11,6 +14,11 @@ def gameUpdate():
     pg.display.update()
 
 def snakeGen():
+    """
+Generate the next position of each snake cell based on the direction the \
+snake is moving. Call the snakePrint(pos) function to update the position. \
+Also check if the snake has run into itself.
+    """
     collision = False    
     for i, pos in enumerate(snake_pos):
         if(snake_dir[i] == 1):
@@ -45,8 +53,12 @@ def snakeGen():
         
 
 def foodGen():
-    pos_w = int(randint(0, canv_w - 2 * pt_dim)/pt_dim) * pt_dim
-    pos_h = int(randint(0, canv_h - 2 * pt_dim)/pt_dim) * pt_dim
+    """
+Generate the next random food position, making sure it doesn't fall on a \
+location with a snake cell on.
+    """
+    pos_w = int(randint(0, canv_w - pt_dim)/pt_dim) * pt_dim
+    pos_h = int(randint(0, canv_h - pt_dim)/pt_dim) * pt_dim
     
     food_on_snake = 1
     
@@ -55,14 +67,18 @@ def foodGen():
         for i in range(len(snake_pos)):
             if([pos_h, pos_w] == snake_pos[i]):
                 food_on_snake = 1
-                pos_w = int(randint(0, canv_w - 2 * pt_dim)/pt_dim) * pt_dim
-                pos_h = int(randint(0, canv_h - 2 * pt_dim)/pt_dim) * pt_dim
+                # if food falls on snake, generate new food position
+                pos_w = int(randint(0, canv_w - pt_dim)/pt_dim) * pt_dim
+                pos_h = int(randint(0, canv_h - pt_dim)/pt_dim) * pt_dim
                 break
             else:
                 food_on_snake = 0
     return [pos_h, pos_w]
 
 def snakePrint(pos):
+    """
+Draw a rectangle at the location of the provided 'pos' variable.
+    """
     pg.draw.rect(game_disp, white, [pos[1], pos[0], pt_dim, pt_dim])  
     
 #############################################################################
@@ -109,7 +125,7 @@ pg.display.set_caption('Snake Python')
 # the head of the snake is the left end of this list
 snake_dir = [direction] * snake_len
 
-# (x,y) position of each snake cell that is on: head of snake is on the left
+# (x,y) position of each snake cell: head of snake is on the left
 snake_pos = []
 snake_pos.append([canv_h/2, canv_w/2])
 snake_pos.append([canv_h/2, canv_w/2 - pt_dim])
@@ -120,10 +136,12 @@ food_pos = foodGen()
 run = True
 
 while not game_over:
+    # if user closes the window, the game is over
     for event in pg.event.get():
         if (event.type == pg.QUIT):
             game_over = True
             break
+        # if user presses any key when game is over, restart game
         if (event.type == pg.KEYDOWN):
             run = True
             direction = 1
@@ -145,12 +163,14 @@ while not game_over:
             score = 0
         
     while run:
+        # if user closes the window, the game is over
         for event in pg.event.get():
             if (event.type == pg.QUIT):
                 run = False
                 game_over = True
                 break
-            
+        
+        # get user input for snake direction: <, >, ^, v
         pressed = pg.key.get_pressed()
         if pressed[pg.K_LEFT]:
             if(snake_dir[0] != 1):
@@ -168,16 +188,22 @@ while not game_over:
             if(snake_dir[0] != 2):
                 direction = -2
         
+        # add the new direction to the front of the list, popping the last
+        # this updates directions for each snake cell
         snake_dir = [direction] + snake_dir
         del snake_dir[-1]
         
         game_disp.fill(black)
+        # keep track of snake's tail; to be used when snake gets longer
         tail_prev = snake_pos[-1].copy()
+        
+        # generate next snake position; check if snake has crashed into itself
         collision = snakeGen()
-            
+        
+        # when snake touches food, make snake longer and increment score
         if(snake_pos[0] == food_pos):
             score += 1
-            grow = 1
+            # the added cell will not move for the first time increment
             snake_dir.append(0)
             snake_pos.append(tail_prev)
             snakePrint(snake_pos[-1])
@@ -187,6 +213,7 @@ while not game_over:
             run = False
             clear_events = True
         
+        # check winning condition: length of snake is max - win_thresh
         if(len(snake_pos) >= (canv_w/pt_dim) * (canv_h/pt_dim) - win_thresh):
             win = True
             run = False
@@ -208,9 +235,12 @@ while not game_over:
     text_rect = text.get_rect(center=(canv_w/2, canv_h/2))
     screen.blit(text, text_rect)
     pg.display.update()
-    pg.time.wait(1000)
+    pg.time.wait(500)
+    
+    # after game is over, clear keyboard events
     if(clear_events):
         pg.event.clear()
+        pg.time.wait(500)
         clear_events = False
 
 pg.quit()
