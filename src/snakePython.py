@@ -2,14 +2,16 @@ import pygame as pg
 from random import randint
 
 def gameUpdate():
-    textsurface = font.render('Score: ' + str(score), True, white)
+    score_txt = font.render('Score: ' + str(score), True, white)
+    hscore_txt = font.render('High Score: ' + str(high_score), True, white)
     pg.draw.rect(game_disp, red, [food_pos[1], food_pos[0], pt_dim, pt_dim])
-    game_disp.blit(textsurface, (0,0))
+    game_disp.blit(score_txt, (0,0))
+    game_disp.blit(hscore_txt, (canv_w - 150, 0))
     screen.blit(game_disp, (0,0))
     pg.display.update()
 
 def snakeGen():
-    collision = 0    
+    collision = False    
     for i, pos in enumerate(snake_pos):
         if(snake_dir[i] == 1):
             if(pos[1] >= canv_w - pt_dim):
@@ -37,7 +39,7 @@ def snakeGen():
     for i in range(len(snake_pos) - 1):
         for j in range(i + 1, len(snake_pos)):
             if(snake_pos[i] == snake_pos[j]):
-                collision = 1
+                collision = True
                 return collision
     return collision         
         
@@ -64,12 +66,13 @@ def snakePrint(pos):
     pg.draw.rect(game_disp, white, [pos[1], pos[0], pt_dim, pt_dim])  
     
 #############################################################################
-time_wait_ms = 120
+time_wait_ms = 110
 canv_w = 1280
 canv_h = 720
 step = 10
 origin = 0
 score = 0
+high_score = 0
 direction = 1
 snake_len = 3
 grow_tail_dir = 0
@@ -79,9 +82,12 @@ pt_dim = 40
 white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
-collision = 0
-game_over = 0
-win = 0
+collision = False
+game_over = False
+win = False
+win_thresh = 10
+clear_events = False
+text_pos = 50
 #############################################################################
 
 pg.init()
@@ -113,69 +119,99 @@ food_pos = foodGen()
         
 run = True
 
-while run:
-    for event in pg.event.get():
-        if (event.type == pg.QUIT):
-            run = False
-            game_over = 1
-            break
-        
-    pressed = pg.key.get_pressed()
-    if pressed[pg.K_LEFT]:
-        if(snake_dir[0] != 1):
-            direction = -1
-        
-    if pressed[pg.K_RIGHT]:
-        if(snake_dir[0] != -1):
-            direction = 1
-        
-    if pressed[pg.K_UP]:
-        if(snake_dir[0] != -2):
-            direction = 2
-        
-    if pressed[pg.K_DOWN]:
-        if(snake_dir[0] != 2):
-            direction = -2
-    
-    snake_dir = [direction] + snake_dir
-    del snake_dir[-1]
-    
-    game_disp.fill(black)
-    tail_prev = snake_pos[-1].copy()
-    collision = snakeGen()
-        
-    if(snake_pos[0] == food_pos):
-        score += 1
-        grow = 1
-        snake_dir.append(0)
-        snake_pos.append(tail_prev)
-        snakePrint(snake_pos[-1])
-        food_pos = foodGen()
-    
-    if(collision):
-        run = False
-    
-    if(len(snake_pos) >= (canv_w/pt_dim) * (canv_h/pt_dim) - 10):
-        win = 1
-        run = False
-        
-    gameUpdate()
-    pg.time.wait(time_wait_ms)
-
-if(win):
-    text = winning_text.render('Congratulations, You Won!', True, white)
-else:
-    text = game_over_text.render('Game Over!', True, white)
-
-text_rect = text.get_rect(center=(canv_w/2, canv_h/2))
-screen.blit(text, text_rect)
-pg.display.update()
-
 while not game_over:
     for event in pg.event.get():
         if (event.type == pg.QUIT):
-            game_over = 1
+            game_over = True
             break
+        if (event.type == pg.KEYDOWN):
+            run = True
+            direction = 1
+            snake_len = 3
+            grow_tail_dir = 0
+            grow_tail_pos = [0, 0]
+            tail_prev = [0, 0]
+            collision = False
+            win = False
+            game_disp.fill(black)
+            snake_dir = [direction] * snake_len
+            snake_pos = []
+            snake_pos.append([canv_h/2, canv_w/2])
+            snake_pos.append([canv_h/2, canv_w/2 - pt_dim])
+            snake_pos.append([canv_h/2, canv_w/2 - 2 * pt_dim])            
+            food_pos = foodGen()
+            if(score > high_score):
+                high_score = score
+            score = 0
+        
+    while run:
+        for event in pg.event.get():
+            if (event.type == pg.QUIT):
+                run = False
+                game_over = True
+                break
+            
+        pressed = pg.key.get_pressed()
+        if pressed[pg.K_LEFT]:
+            if(snake_dir[0] != 1):
+                direction = -1
+            
+        if pressed[pg.K_RIGHT]:
+            if(snake_dir[0] != -1):
+                direction = 1
+            
+        if pressed[pg.K_UP]:
+            if(snake_dir[0] != -2):
+                direction = 2
+            
+        if pressed[pg.K_DOWN]:
+            if(snake_dir[0] != 2):
+                direction = -2
+        
+        snake_dir = [direction] + snake_dir
+        del snake_dir[-1]
+        
+        game_disp.fill(black)
+        tail_prev = snake_pos[-1].copy()
+        collision = snakeGen()
+            
+        if(snake_pos[0] == food_pos):
+            score += 1
+            grow = 1
+            snake_dir.append(0)
+            snake_pos.append(tail_prev)
+            snakePrint(snake_pos[-1])
+            food_pos = foodGen()
+        
+        if(collision):
+            run = False
+            clear_events = True
+        
+        if(len(snake_pos) >= (canv_w/pt_dim) * (canv_h/pt_dim) - win_thresh):
+            win = True
+            run = False
+            clear_events = True
+            
+        gameUpdate()
+        pg.time.wait(time_wait_ms)
+    
+    if(win):
+        text = winning_text.render('Congratulations, You Won!', True, white)
+    else:
+        text = game_over_text.render('Game Over!', True, white)
+        if not game_over:            
+            text2 = game_over_text.render('Press any key to continue', \
+                                              True, white)
+            text2_rect = text2.get_rect(center=(canv_w/2, canv_h/2 + text_pos))
+            screen.blit(text2, text2_rect)
+    
+    text_rect = text.get_rect(center=(canv_w/2, canv_h/2))
+    screen.blit(text, text_rect)
+    pg.display.update()
+    pg.time.wait(1000)
+    if(clear_events):
+        pg.event.clear()
+        clear_events = False
 
 pg.quit()
 quit()
