@@ -135,7 +135,8 @@ pg.display.set_caption('Snake Game')
 win_text = end_font.render('Congratulations, you won!', True, white)
 win_text_rect = win_text.get_rect(center=(canv_w/2, canv_h/2))
 end_text = end_font.render('Game Over!', True, white)
-end_text_rect = end_text.get_rect(center=(canv_w/2, canv_h/4 - text_pos))
+end_text_rect = end_text.get_rect(center=(canv_w/2 - 2 * text_pos, 
+                                          canv_h/4 - text_pos))
 
 # snake direction list: 
 # 1: moving right horizontally
