@@ -47,11 +47,10 @@ snake is moving. Also check if the snake has run into itself.
                 move_h = pt_dim
         snake.move_ip(move_w, move_h)
     
-    # check if snake collides with iteself
-    for i in range(1, len(snake_pos)):
-        if (snake_pos[0].colliderect(snake_pos[i])):
-            collision = True
-            return collision
+    # check if head of snake collides with the snake's body
+    if (snake_pos[0].collidelist(snake_pos[1:]) != -1):
+        collision = True
+        
     return collision         
         
 
@@ -265,9 +264,10 @@ while not game_over:
             run = False
             print_game_over = True
             clear_events = True
-            
-        gameUpdate()
-        pg.time.wait(time_wait_ms)
+        
+        if not collision:
+            gameUpdate()
+            pg.time.wait(time_wait_ms)
     
     if (win and print_game_over):
         screen.blit(win_text, win_text_rect)
