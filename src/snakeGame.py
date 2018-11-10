@@ -132,7 +132,7 @@ game_disp = pg.Surface((canv_w, canv_h))
 font = pg.font.SysFont('Times New Roman', 20, True)
 end_font = pg.font.SysFont('Times New Roman', 38, True)
 pg.display.set_caption('Snake Game')
-win_text = end_font.render('Congratulations, you won!', True, white)
+win_text = end_font.render('Congratulations, you won!', True, black)
 win_text_rect = win_text.get_rect(center=(canv_w/2, canv_h/2))
 end_text = end_font.render('Game Over!', True, white)
 end_text_rect = end_text.get_rect(center=(canv_w/2 - 2 * text_pos, 
